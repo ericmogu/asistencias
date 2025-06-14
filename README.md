@@ -1,69 +1,67 @@
-import configparser
-from data_loading import cargar_y_filtrar_excel
-from data_processing import contar_asistencias_por_dia_y_grado
-from email_utils import enviar_email_con_graficos
-from data_visualization import crear_grafico_circular, crear_grafico_barras
+# Informe de Asistencias y Ausencias - Proyecto Python
 
-def main():
-    # Cargar configuración
-    config = configparser.ConfigParser()
-    config.read('config.ini')
+Este proyecto permite cargar, filtrar y analizar archivos Excel con información de asistencias y ausencias de estudiantes por grado y día. Además, genera gráficos que resumen estas estadísticas y envía un informe por correo electrónico con los gráficos embebidos.
 
-    SMTP_SERVER = config['EMAIL']['SMTP_SERVER']
-    SMTP_PORT = config['EMAIL']['SMTP_PORT']
-    EMAIL_SENDER = config['EMAIL']['EMAIL_SENDER']
-    EMAIL_PASSWORD = config['EMAIL']['EMAIL_PASSWORD']
-    EMAIL_RECEIVER = config['EMAIL']['EMAIL_RECEIVER']
+---
 
-    # Cargar y filtrar datos
-    carpeta = 'files'
-    df_resultado = cargar_y_filtrar_excel(carpeta)
-    print(f'Todos los archivos Excel en "{carpeta}" han sido combinados, filtrados y ordenados.')
+## Características Principales
 
-    if df_resultado.empty:
-        print("No hay datos para procesar.")
-        return
-    
-    df_resultado['GRADO'] = df_resultado['GRADO'].astype(str).str.replace(' ', '')
-    df_resultado_final = contar_asistencias_por_dia_y_grado(df_resultado)
-    print("Conteo de ausencias y asistencias por día y grado:")
-    print(df_resultado_final.head(30))
+- **Carga y filtrado automático** de múltiples archivos Excel dentro de una carpeta.
+- **Conteo detallado** de asistencias y ausencias por día y por grado académico.
+- **Generación de gráficos** claros y visuales:
+  - Gráfico circular con la proporción y cantidad de asistencias y ausencias del último día.
+  - Gráfico de barras con el total de ausencias por grado durante el mes.
+- **Envio automático de correo electrónico** con los gráficos embebidos para facilitar la visualización y el envío de informes.
 
-    ultima_columna_ausencias = df_resultado_final.filter(like='Ausencias_').columns[-1]
-    ultima_columna_asistencias = df_resultado_final.filter(like='Asistencias_').columns[-1]
+---
 
-    total_ausencias_ultimo_dia = df_resultado_final[ultima_columna_ausencias].sum()
-    total_asistencias_ultimo_dia = df_resultado_final[ultima_columna_asistencias].sum()
+## Requisitos
 
-    print(f'Total de Ausencias del Último Día: {total_ausencias_ultimo_dia}')
-    print(f'Total de Asistencias del Último Día: {total_asistencias_ultimo_dia}')
+- Python 3.7 o superior
+- Bibliotecas Python:
+  - pandas
+  - matplotlib
+  - openpyxl (para leer archivos Excel)
+- Acceso a un servidor SMTP (por defecto usa Outlook con `smtp.office365.com`).
 
-    # Gráfico circular
-    cantidades = [total_asistencias_ultimo_dia, total_ausencias_ultimo_dia]
-    categorias = ['Asistencias', 'Ausencias']
-    fig_circular = crear_grafico_circular(cantidades, categorias)
+Puedes instalar las dependencias con:
 
-    # Totalizar asistencias y ausencias por grado
-    total_ausencias = df_resultado_final.filter(like='Ausencias_').sum(axis=1)
-    total_asistencias = df_resultado_final.filter(like='Asistencias_').sum(axis=1)
-    df_resultado_final['Total_Ausencias'] = total_ausencias
-    df_resultado_final['Total_Asistencias'] = total_asistencias
-    df_ausencias = df_resultado_final[['GRADO', 'Total_Ausencias', 'Total_Asistencias']]
-    print("Total de ausencias y asistencias por grado:")
-    print(df_ausencias.head(30))
+pip install pandas matplotlib openpyxl
 
-    # Gráfico barras
-    fig_barras = crear_grafico_barras(df_resultado_final)
+## Configuración
 
-    # Enviar email con gráficos
-    asunto_email = 'Informe Gráficos de Asistencias y Ausencias'
-    cuerpo_email = 'A continuación se incluyen los gráficos de asistencias y ausencias generados automáticamente.'
-    figuras = [
-        (fig_circular, 'grafico_circular'),
-        (fig_barras, 'grafico_barras')
-    ]
-    enviar_email_con_graficos(asunto_email, cuerpo_email, figuras, 
-                               SMTP_SERVER, SMTP_PORT, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER)
+El archivo config.ini es necesario para configurar los datos del correo electrónico. Debes crear un archivo con la siguiente estructura y completar con tus datos personales:
 
-if __name__ == '__main__':
-    main()
+[EMAIL]
+SMTP_SERVER = smtp.office365.com
+SMTP_PORT = 587
+EMAIL_SENDER = tu_correo@ejemplo.com
+EMAIL_PASSWORD = tu_contraseña
+EMAIL_RECEIVER = correo_destinatario@ejemplo.com
+
+## Uso
+Coloca tus archivos Excel (.xlsx) con datos de asistencias en la carpeta files/.
+Ejecuta el script principal:
+
+
+python main.py
+El programa:
+Carga y filtra los datos excluyendo filas que contienen textos no deseados.
+Calcula asistencias y ausencias.
+Genera gráficos informativos.
+Envía un correo electrónico con los gráficos adjuntos.
+Estructura del Proyecto
+main.py : Script principal que orquesta la ejecución.
+config.ini : Archivo de configuración para el correo electrónico.
+data_loading.py : Funciones para cargar y filtrar datos Excel.
+data_processing.py : Funciones para conteos y agregaciones.
+data_visualization.py : Funciones para creación de gráficos.
+email_utils.py : Funciones para el envío de correos electrónicos.
+Notas importantes
+Asegúrate de que la carpeta files exista y contenga los archivos Excel.
+El correo configurado debe permitir acceso SMTP con el usuario y contraseña proporcionados.
+El script no procesa datos si los archivos están vacíos o todos los datos son filtrados.
+Contacto
+Si tienes dudas o quieres contribuir, contacta a [tu correo o github].
+
+Este proyecto utiliza buenas prácticas de modularización y es fácilmente ampliable o adaptable según necesidades futuras.
